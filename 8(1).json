@@ -1,0 +1,325 @@
+{
+  "name": "8",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0e4421c0-279c-4000-a6a0-9d086911696c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/*.docx",
+        "options": {
+          "fileName": "FAQ_TechFlow.docx Instrukcia_Smart200.docx Reglament_vozvrat_garantia.docx"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        0
+      ],
+      "id": "a6e6c59b-2658-4e0b-b0f3-d3787133ce48",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "company_docs",
+          "mode": "list",
+          "cachedResultName": "company_docs"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        0
+      ],
+      "id": "a32b6962-e058-4065-9e72-a4692a436936",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "w1H6cRMrFqWUVtfm",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "sentence-transformers/all-MiniLM-L6-v2",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        496,
+        176
+      ],
+      "id": "3026e21c-0cea-40cb-8733-34bc8ccf6444",
+      "name": "Embeddings HuggingFace Inference",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "62skYkvFgqO6X0p5",
+          "name": "Hugging Face account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "docxLoader",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        176
+      ],
+      "id": "abe7abb5-8259-404f-a9ab-39480a380b10",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -352
+      ],
+      "id": "b71e0d58-1b25-4541-9518-649d73fb435c",
+      "name": "Webhook",
+      "webhookId": "15e1e960-e2c4-4efe-869a-556e1e53327b"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Ты — AI-ассистент компании. Отвечай на вопросы сотрудников на основе документов из базы знаний.\n\nПравила:\n- Используй инструмент knowledge_base для поиска информации\n- Если не нашёл ответ в документах — скажи \"Не нашёл информацию в базе знаний\"\n- Всегда указывай источник (название документа)\n- Отвечай на русском языке\n- Будь кратким и по делу",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        -352
+      ],
+      "id": "15304e89-5142-43fb-94e2-2296cf3e738e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -192
+      ],
+      "id": "9ee16229-1818-4745-8d7b-bc21a5040b47",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "eNyex5fmrPaddFy2",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Поиск информации в корпоративной базе знаний компании. Используй этот инструмент, когда пользователь задаёт вопросы по внутренним документам, инструкциям, регламентам или просит найти информацию в загруженных файлах. Принимает текстовый запрос (вопрос пользователя) и возвращает релевантные фрагменты текста из документов вместе с названиями источников.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "company_docs",
+          "mode": "list",
+          "cachedResultName": "company_docs"
+        },
+        "topK": 3,
+        "includeDocumentMetadata": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        -192
+      ],
+      "id": "8404035b-4107-4cec-ba7f-18c7582268fb",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "w1H6cRMrFqWUVtfm",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reply\": {{ JSON.stringify($json.output) }} }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        -352
+      ],
+      "id": "84a8917d-7ea4-4ada-9ded-945ccb1c389a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        304,
+        -192
+      ],
+      "id": "f5f92eb2-39ee-4a83-8ca6-1c3a19129e41",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "70942f24-c17e-4812-9e9d-c3f2f3bb53a1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cd43158e2f612dbef91bbee1c42bc2c38eb2aec604b6e9fd2e5230737a80c0bc"
+  },
+  "nodeGroups": [],
+  "id": "D8LL0fB6thhMth9C",
+  "tags": []
+}
