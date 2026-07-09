@@ -1,0 +1,234 @@
+{
+  "name": "Bitrix24",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "86f2e1b4-8090-43f1-9a02-d80f23144139",
+      "name": "Webhook",
+      "webhookId": "02a56ad9-1693-484c-a8a4-b247b3f06f8e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Ты — AI-ассистент для менеджера по продажам.\n\nТвои возможности:\n1. search_client(query) — поиск клиента в Битрикс24 по email,  имени или ID\n\nПравила:\n- Отвечай на русском языке\n- Будь кратким и по делу\n- Если не знаешь ответ — используй инструменты\n- Учитывай контекст диалога",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b993e718-7b2b-40ab-8b86-744180e35f03",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.chatId || 'default' }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        496,
+        144
+      ],
+      "id": "8b6f9a49-fe01-4893-8b6f-63f76140ed57",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Поиск контакта в Битрикс24. Принимает ТОЛЬКО имя или email клиента (без слов \"найди\", \"клиент\" и т.д.). Пример: query=\"Владос\" или query=\"ivan@mail.ru\". Возвращает JSON с контактом.",
+        "url": "=https://b24-fh10xx.bitrix24.ru/rest/1/yh8unky8wj11lupc/crm.contact.list.json",
+        "authentication": "genericCredentialType",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        144
+      ],
+      "id": "59d57736-d8da-43b1-85f0-8e218f08c8c8",
+      "name": "search_client",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OGjOunWuiqW5Rpxa",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"reply\": \"{{ $json.output }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        768,
+        0
+      ],
+      "id": "2d2810ef-13c7-499a-a990-773949207b6a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        400,
+        144
+      ],
+      "id": "bc56c227-026e-4335-a2e7-347c8dc5f119",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "eNyex5fmrPaddFy2",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Получить контакт из Битрикс24 по ID. Принимает id (число). Используй, когда известен ID клиента.",
+        "url": "=https://b24-fh10xx.bitrix24.ru/rest/1/yh8unky8wj11lupc/crm.contact.get.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "=",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        768,
+        144
+      ],
+      "id": "561c4375-22fa-45c6-933c-055482f2cfbe",
+      "name": "get_client_by_id",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OGjOunWuiqW5Rpxa",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_client_by_id": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bb15f119-c7a4-4afa-bcaa-318795d2c090",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cd43158e2f612dbef91bbee1c42bc2c38eb2aec604b6e9fd2e5230737a80c0bc"
+  },
+  "nodeGroups": [],
+  "id": "86bLk74xXqiMLnEL",
+  "tags": []
+}
